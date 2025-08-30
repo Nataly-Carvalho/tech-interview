@@ -1,51 +1,44 @@
 class ProductsController < ApplicationController
-  before_action :set_product, only: %i[ show update destroy ]
+  before_action :product, only: %i[ show update destroy ]
 
   # GET /products
   def index
     @products = Product.all
 
-    render json: @products
+    render json: @products.map { |product| ProductSerializer.call(product) }
   end
 
   # GET /products/1
   def show
-    render json: @product
+    render json: ProductSerializer.call(@product)
   end
 
   # POST /products
   def create
-    @product = Product.new(product_params)
-
-    if @product.save
-      render json: @product, status: :created, location: @product
-    else
-      render json: @product.errors, status: :unprocessable_entity
-    end
+    product = Product.create!(permitted_params)
+    render json: ProductSerializer.call(product), status: :created
   end
 
   # PATCH/PUT /products/1
   def update
-    if @product.update(product_params)
-      render json: @product
-    else
-      render json: @product.errors, status: :unprocessable_entity
-    end
+    product.update!(permitted_params)
+    render json: ProductSerializer.call(product), status: :ok
   end
 
   # DELETE /products/1
   def destroy
-    @product.destroy!
+    product.destroy!
+    head :no_content
   end
 
   private
     # Use callbacks to share common setup or constraints between actions.
-    def set_product
-      @product = Product.find(params[:id])
+    def product
+      @product ||= Product.find(params[:id])
     end
 
     # Only allow a list of trusted parameters through.
-    def product_params
-      params.require(:product).permit(:name, :price)
+    def permitted_params
+      params.require(:product).permit(:name, :unit_price)
     end
 end
